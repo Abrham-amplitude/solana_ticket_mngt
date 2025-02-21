@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@solana/spl-memo": "^0.2.5"
+  }
+}

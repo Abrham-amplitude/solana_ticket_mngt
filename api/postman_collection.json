@@ -1,0 +1,343 @@
+{
+  "info": {
+    "name": "Ticket Management System API",
+    "description": "API for managing tickets on Solana blockchain",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpass\",\n  \"email\": \"test@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "if (jsonData.success && jsonData.token) {",
+                  "    pm.environment.set(\"authToken\", jsonData.token);",
+                  "    console.log(\"Auth token saved to environment\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpass\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-access-token",
+                "value": "{{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/events?limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "events"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "if (jsonData._id) {",
+                  "    pm.environment.set(\"eventId\", jsonData._id);",
+                  "    console.log(\"Event ID saved to environment\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/event",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "event"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Concert\",\n  \"categories\": [\"music\"],\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [0, 0]\n  },\n  \"media\": \"concert.jpg\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "Mint Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "if (jsonData.success && jsonData.data.ticketAddress) {",
+                  "    pm.environment.set(\"ticketAddress\", jsonData.data.ticketAddress);",
+                  "    console.log(\"Ticket address saved to environment\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/mint",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "mint"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"ticketData\": {\n    \"ticketType\": \"VIP\",\n    \"seatNumber\": \"A1\",\n    \"price\": 100000000\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Details",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have auth token",
+                  "const authToken = pm.environment.get('authToken');",
+                  "if (!authToken) {",
+                  "    console.error('No auth token found. Please run the Login request first.');",
+                  "    throw new Error('Missing auth token');",
+                  "}",
+                  "",
+                  "// Check if we have ticket address",
+                  "const ticketAddress = pm.environment.get('ticketAddress');",
+                  "if (!ticketAddress) {",
+                  "    console.error('No ticket address found. Please mint a ticket first.');",
+                  "    throw new Error('Missing ticket address');",
+                  "}",
+                  "",
+                  "// Validate ticket address format",
+                  "if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(ticketAddress)) {",
+                  "    console.error('Invalid ticket address format:', ticketAddress);",
+                  "    throw new Error('Invalid ticket address format');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has ticket data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('metadata');",
+                  "    pm.expect(jsonData.data).to.have.property('owner');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-access-token",
+                "value": "{{authToken}}",
+                "type": "text",
+                "description": "JWT token obtained from login"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketAddress}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketAddress}}"]
+            },
+            "description": "Get ticket details from the blockchain. Requires authentication token and valid ticket address."
+          }
+        },
+        {
+          "name": "List Ticket for Resale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketAddress}}/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketAddress}}", "list"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 150000000\n}"
+            }
+          }
+        },
+        {
+          "name": "Transfer Ticket",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate new keypair for buyer if not exists",
+                  "if (!pm.environment.get(\"buyerSecretKey\")) {",
+                  "    const { Keypair } = require('@solana/web3.js');",
+                  "    const buyer = Keypair.generate();",
+                  "    pm.environment.set(\"buyerSecretKey\", Array.from(buyer.secretKey).toString());",
+                  "    pm.environment.set(\"newOwnerPublicKey\", buyer.publicKey.toString());",
+                  "    console.log(\"Generated new buyer keypair\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-access-token",
+                "value": "{{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketAddress}}/transfer",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketAddress}}", "transfer"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newOwner\": \"{{newOwnerPublicKey}}\",\n  \"buyerSecretKey\": \"{{buyerSecretKey}}\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set baseUrl if not exists",
+          "if (!pm.environment.get(\"baseUrl\")) {",
+          "    pm.environment.set(\"baseUrl\", \"http://localhost:3000\");",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}
