@@ -1,0 +1,9 @@
+# Solana test ledger
+rocksdb/
+accounts/
+snapshots/
+*.log
+*.failed
+
+# Keep important files
+!faucet-keypair.json 
