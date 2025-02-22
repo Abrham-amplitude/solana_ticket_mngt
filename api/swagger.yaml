@@ -10,6 +10,8 @@ info:
 servers:
   - url: http://localhost:3000
     description: Development server
+  - url: https://solana-ticket-mngt.onrender.com
+    description: Production server
   # - url: https://api.devnet.example.com
   #   description: Devnet server
 
